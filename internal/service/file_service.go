@@ -1,40 +1,53 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"log/slog"
 	"strings"
 
 	"github.com/ashtishad/fileverse/internal/domain"
+	"github.com/ashtishad/fileverse/internal/infra/storage"
 	"github.com/ashtishad/fileverse/pkg/utils"
 )
 
-// FileService defines the interface for file service operations.
-type FileService interface {
-	SaveFile(ctx context.Context, fileData domain.NewFileReqDTO) (*domain.FileRespDTO, utils.APIError)
-}
-
-// DefaultFileService is the default implementation of FileService.
+// DefaultFileService is the primary implementation of FileService.
 type DefaultFileService struct {
-	repo domain.FileRepository
-	l    *slog.Logger
+	repo   domain.FileRepository
+	ipfs   *storage.IPFSStorage
+	logger *slog.Logger
 }
 
-// NewFileService creates a new DefaultFileService with the given repository and logger.
-func NewFileService(repo domain.FileRepository, l *slog.Logger) *DefaultFileService {
+// NewFileService creates a new DefaultFileService with the given repository, IPFS storage, and logger.
+func NewFileService(repo domain.FileRepository, ipfs *storage.IPFSStorage, logger *slog.Logger) *DefaultFileService {
 	return &DefaultFileService{
-		repo: repo,
-		l:    l,
+		repo:   repo,
+		ipfs:   ipfs,
+		logger: logger,
 	}
 }
 
 // SaveFile handles the logic for saving a new file.
-func (s *DefaultFileService) SaveFile(ctx context.Context, fileData domain.NewFileReqDTO) (*domain.FileRespDTO, utils.APIError) { //nolint:lll
-	// ToDo: Validate file input data
+func (s *DefaultFileService) SaveFile(ctx context.Context, fileName string, fileReader io.Reader) (*domain.FileRespDTO, utils.APIError) { //nolint:lll
+	// Buffer to store file content temporarily for size calculation
+	var fileBuffer bytes.Buffer
+	teeReader := io.TeeReader(fileReader, &fileBuffer)
+
+	// Upload to IPFS and get the hash
+	cid, err := s.ipfs.UploadFile(teeReader)
+	if err != nil {
+		s.logger.Error("failed to upload file to IPFS", err)
+		return nil, utils.InternalServerError("failed to upload file to IPFS", err)
+	}
+
+	// The size of the file is the size of the buffer after the read operation
+	fileSize := int64(fileBuffer.Len())
+
 	file := domain.File{
-		FileName: strings.TrimSpace(fileData.FileName),
-		Size:     1000,         // dummy for now, will be generated from file
-		IPFSHash: "samplehash", // dummy for now, will be generated from file
+		FileName: strings.TrimSpace(fileName),
+		Size:     fileSize,
+		IPFSHash: cid,
 	}
 
 	savedFile, apiErr := s.repo.SaveMeta(ctx, &file)
