@@ -24,7 +24,7 @@ func Start() {
 
 	dbClient := database.GetDBClient(logger)
 
-	ipfsClient := storage.NewIPFSStorage("localhost:5001")
+	ipfsClient := storage.NewIPFSStorage(os.Getenv("IPFS_ADDR"))
 
 	fileRepositoryDB := domain.NewFileRepoDB(dbClient, logger)
 
@@ -32,7 +32,7 @@ func Start() {
 
 	router := gin.Default()
 
-	fileHandlers := FileHandlers{s: fileService}
+	fileHandlers := FileHandlers{s: fileService, l: logger}
 
 	router.POST("/upload", fileHandlers.SaveFileHandler)
 	router.GET("/file/:fileId", fileHandlers.GetFileHandler)

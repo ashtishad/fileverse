@@ -18,6 +18,7 @@ func SanityCheck(l *slog.Logger) {
 		"DB_HOST":   "127.0.0.1",
 		"DB_PORT":   "5432",
 		"DB_NAME":   "fileverse",
+		"IPFS_ADDR": "127.0.0.1:5001",
 	}
 
 	for key, defaultValue := range defaultEnvVars {
