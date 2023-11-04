@@ -19,3 +19,7 @@ func NewFileRespDTO(file *File) *FileRespDTO {
 		Timestamp: file.Timestamp,
 	}
 }
+
+type NewFileReqDTO struct {
+	FileName string `json:"fileName"`
+}
