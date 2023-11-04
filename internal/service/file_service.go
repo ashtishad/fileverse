@@ -29,7 +29,6 @@ func NewFileService(repo domain.FileRepository, ipfs *storage.IPFSStorage, logge
 
 // SaveFile handles the logic for saving a new file.
 func (s *DefaultFileService) SaveFile(ctx context.Context, fileName string, fileSize int64, fileReader io.Reader) (*domain.FileRespDTO, utils.APIError) { //nolint:lll
-	// Upload to IPFS and get the hash
 	cid, err := s.ipfs.UploadFile(fileReader)
 	if err != nil {
 		s.logger.Error("failed to upload file to IPFS", err)
@@ -50,4 +49,28 @@ func (s *DefaultFileService) SaveFile(ctx context.Context, fileName string, file
 	fileRespDTO := domain.NewFileRespDTO(savedFile)
 
 	return fileRespDTO, nil
+}
+
+// RetrieveFile handles the logic for retrieving an existing file.
+func (s *DefaultFileService) RetrieveFile(ctx context.Context, fileID string) ([]byte, utils.APIError) {
+	fileMeta, apiErr := s.repo.FindMeta(ctx, fileID)
+	if apiErr != nil {
+		s.logger.Error("failed to get file metadata", "fileID", fileID, "error", apiErr)
+		return nil, apiErr
+	}
+
+	fileReader, err := s.ipfs.RetrieveFile(fileMeta.IPFSHash)
+	if err != nil {
+		s.logger.Error("failed to retrieve file from IPFS", "hash", fileMeta.IPFSHash, "error", err)
+		return nil, utils.InternalServerError("failed to retrieve file from IPFS", err)
+	}
+	defer fileReader.Close()
+
+	fileContent, err := io.ReadAll(fileReader)
+	if err != nil {
+		s.logger.Error("failed to read file content", "hash", fileMeta.IPFSHash, "error", err)
+		return nil, utils.InternalServerError("failed to read file content", err)
+	}
+
+	return fileContent, nil
 }
