@@ -14,16 +14,11 @@ type FileHandlers struct {
 	l *slog.Logger
 }
 
-// SaveFileHandler handles the HTTP request for saving file metadata.
+// SaveFileHandler handles the HTTP request for saving file metadata to database and file to ipfs storage.
 func (fh *FileHandlers) SaveFileHandler(c *gin.Context) {
-	if err := c.Request.ParseMultipartForm(32 << 20); err != nil { // 32 MB max memory
-		c.JSON(http.StatusBadRequest, gin.H{"error": "File upload error: " + err.Error()})
-		return
-	}
-
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "File retrieval error: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file upload error: " + err.Error()})
 		return
 	}
 	defer file.Close()
@@ -33,16 +28,11 @@ func (fh *FileHandlers) SaveFileHandler(c *gin.Context) {
 
 	fileResp, apiErr := fh.s.SaveFile(c.Request.Context(), fileName, fileSize, file)
 	if apiErr != nil {
-		c.JSON(apiErr.Code(), gin.H{
-			"error": apiErr.Error(),
-		})
-
+		c.JSON(apiErr.Code(), gin.H{"error": apiErr.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"file": fileResp,
-	})
+	c.JSON(http.StatusCreated, gin.H{"file": fileResp})
 }
 
 // GetFileHandler handles the HTTP request for retrieving file content.
