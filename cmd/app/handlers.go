@@ -28,7 +28,6 @@ func (fh *FileHandlers) SaveFileHandler(c *gin.Context) {
 	fileName := header.Filename
 	fileSize := header.Size
 
-	// Pass the file along with its metadata to the service layer
 	fileResp, apiErr := fh.s.SaveFile(c.Request.Context(), fileName, fileSize, file)
 	if apiErr != nil {
 		c.JSON(apiErr.Code(), gin.H{
@@ -41,4 +40,26 @@ func (fh *FileHandlers) SaveFileHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"file": fileResp,
 	})
+}
+
+// GetFileHandler handles the HTTP request for retrieving file content.
+func (fh *FileHandlers) GetFileHandler(c *gin.Context) {
+	fileID := c.Param("fileId")
+
+	fileContent, apiErr := fh.s.RetrieveFile(c.Request.Context(), fileID)
+	if apiErr != nil {
+		c.JSON(apiErr.Code(), gin.H{
+			"error": apiErr.Error(),
+		})
+
+		return
+	}
+
+	c.Writer.WriteHeader(http.StatusOK)
+
+	if _, err := c.Writer.Write(fileContent); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to write file content to response: " + err.Error(),
+		})
+	}
 }

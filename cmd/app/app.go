@@ -35,6 +35,7 @@ func Start() {
 	fileHandlers := FileHandlers{s: fileService}
 
 	router.POST("/upload", fileHandlers.SaveFileHandler)
+	router.GET("/file/:fileId", fileHandlers.GetFileHandler)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%s", os.Getenv("API_HOST"), os.Getenv("API_PORT")),
