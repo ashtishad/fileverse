@@ -67,3 +67,30 @@ func (d *FileRepoDB) SaveMeta(ctx context.Context, file *File) (*File, utils.API
 
 	return file, nil
 }
+
+// FindMeta retrieves a file's metadata from the database using the file ID(uuid).
+func (d *FileRepoDB) FindMeta(ctx context.Context, fileID string) (*File, utils.APIError) {
+	const sqlSelectFile = `SELECT id, file_id, file_name, size,  timestamp, ipfs_hash FROM file_metadata WHERE file_id=$1;`
+
+	file := &File{}
+	err := d.db.QueryRowContext(ctx, sqlSelectFile, fileID).Scan(
+		&file.ID,
+		&file.FileID,
+		&file.FileName,
+		&file.Size,
+		&file.Timestamp,
+		&file.IPFSHash,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, utils.NotFoundError(fmt.Sprintf("no file found with ID '%s'", fileID))
+		}
+
+		d.l.Error("error retrieving file record", "err", err)
+
+		return nil, utils.InternalServerError("error retrieving file record", err)
+	}
+
+	return file, nil
+}
