@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -26,11 +27,28 @@ func (s *IPFSStorage) UploadFile(r io.Reader) (string, error) {
 	return cid, nil
 }
 
-func (s *IPFSStorage) RetrieveFile(cid string) (io.ReadCloser, error) {
+// RetrieveFileChunk reads a specific chunk from an IPFS-stored file given its CID, offset, and size.
+// It returns the requested file segment as a byte slice or an error if the read is unsuccessful.
+func (s *IPFSStorage) RetrieveFileChunk(cid string, offset int64, size int64) ([]byte, error) {
 	reader, err := s.shell.Cat(cid)
 	if err != nil {
-		return nil, fmt.Errorf("error while retriving file from ipfs: %w", err)
+		return nil, fmt.Errorf("error while retrieving file from IPFS: %w", err)
+	}
+	defer reader.Close()
+
+	if offset > 0 {
+		_, err = io.CopyN(io.Discard, reader, offset)
+		if err != nil {
+			return nil, fmt.Errorf("error while skipping to offset in file: %w", err)
+		}
 	}
 
-	return reader, nil
+	buf := make([]byte, size)
+	n, err := io.ReadFull(reader, buf)
+
+	if err != nil && err != io.EOF && !errors.Is(err, io.ErrUnexpectedEOF) {
+		return nil, fmt.Errorf("error while reading chunk from file: %w", err)
+	}
+
+	return buf[:n], nil
 }
