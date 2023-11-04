@@ -31,7 +31,7 @@ func NewFileService(repo domain.FileRepository, ipfs *storage.IPFSStorage, logge
 func (s *DefaultFileService) SaveFile(ctx context.Context, fileName string, fileSize int64, fileReader io.Reader) (*domain.FileRespDTO, utils.APIError) { //nolint:lll
 	cid, err := s.ipfs.UploadFile(fileReader)
 	if err != nil {
-		s.logger.Error("failed to upload file to IPFS", err)
+		s.logger.Error("failed to upload file to IPFS", "err", err)
 		return nil, utils.InternalServerError("failed to upload file to IPFS", err)
 	}
 
@@ -51,8 +51,8 @@ func (s *DefaultFileService) SaveFile(ctx context.Context, fileName string, file
 	return fileRespDTO, nil
 }
 
-// RetrieveFile handles the logic for retrieving an existing file.
-func (s *DefaultFileService) RetrieveFile(ctx context.Context, fileID string) ([]byte, utils.APIError) {
+// RetrieveFile handles the logic for retrieving an existing file with streaming.
+func (s *DefaultFileService) RetrieveFile(ctx context.Context, fileID string) (io.ReadCloser, utils.APIError) {
 	fileMeta, apiErr := s.repo.FindMeta(ctx, fileID)
 	if apiErr != nil {
 		s.logger.Error("failed to get file metadata", "fileID", fileID, "error", apiErr)
@@ -64,13 +64,7 @@ func (s *DefaultFileService) RetrieveFile(ctx context.Context, fileID string) ([
 		s.logger.Error("failed to retrieve file from IPFS", "hash", fileMeta.IPFSHash, "error", err)
 		return nil, utils.InternalServerError("failed to retrieve file from IPFS", err)
 	}
-	defer fileReader.Close()
 
-	fileContent, err := io.ReadAll(fileReader)
-	if err != nil {
-		s.logger.Error("failed to read file content", "hash", fileMeta.IPFSHash, "error", err)
-		return nil, utils.InternalServerError("failed to read file content", err)
-	}
-
-	return fileContent, nil
+	// Instead of reading the file content here, just return the reader
+	return fileReader, nil
 }

@@ -1,6 +1,8 @@
 package app
 
 import (
+	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/ashtishad/fileverse/internal/service"
@@ -9,6 +11,7 @@ import (
 
 type FileHandlers struct {
 	s *service.DefaultFileService
+	l *slog.Logger
 }
 
 // SaveFileHandler handles the HTTP request for saving file metadata.
@@ -46,7 +49,7 @@ func (fh *FileHandlers) SaveFileHandler(c *gin.Context) {
 func (fh *FileHandlers) GetFileHandler(c *gin.Context) {
 	fileID := c.Param("fileId")
 
-	fileContent, apiErr := fh.s.RetrieveFile(c.Request.Context(), fileID)
+	fileReader, apiErr := fh.s.RetrieveFile(c.Request.Context(), fileID)
 	if apiErr != nil {
 		c.JSON(apiErr.Code(), gin.H{
 			"error": apiErr.Error(),
@@ -54,12 +57,15 @@ func (fh *FileHandlers) GetFileHandler(c *gin.Context) {
 
 		return
 	}
+	defer fileReader.Close()
 
+	c.Writer.Header().Set("Content-Type", "application/octet-stream")
+	c.Writer.Header().Set("Content-Disposition", "attachment; filename=<FILENAME>")
+
+	// Stream the file directly to the response body
 	c.Writer.WriteHeader(http.StatusOK)
 
-	if _, err := c.Writer.Write(fileContent); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to write file content to response: " + err.Error(),
-		})
+	if _, err := io.Copy(c.Writer, fileReader); err != nil {
+		fh.l.Error("failed to write file content to response", "fileID", fileID, "error", err)
 	}
 }
