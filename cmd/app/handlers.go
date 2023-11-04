@@ -3,24 +3,32 @@ package app
 import (
 	"net/http"
 
-	"github.com/ashtishad/fileverse/internal/domain"
 	"github.com/ashtishad/fileverse/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
 type FileHandlers struct {
-	s service.FileService
+	s *service.DefaultFileService
 }
 
 // SaveFileHandler handles the HTTP request for saving file metadata.
 func (fh *FileHandlers) SaveFileHandler(c *gin.Context) {
-	var fileDataRequest domain.NewFileReqDTO
-	if err := c.ShouldBindJSON(&fileDataRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := c.Request.ParseMultipartForm(32 << 20); err != nil { // 32 MB max memory
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File upload error: " + err.Error()})
 		return
 	}
 
-	fileResp, apiErr := fh.s.SaveFile(c.Request.Context(), fileDataRequest)
+	file, _, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File retrieval error: " + err.Error()})
+		return
+	}
+	defer file.Close()
+
+	fileName := c.Request.FormValue("fileName")
+
+	// Pass the file along with its metadata to the service layer
+	fileResp, apiErr := fh.s.SaveFile(c.Request.Context(), fileName, file)
 	if apiErr != nil {
 		c.JSON(apiErr.Code(), gin.H{
 			"error": apiErr.Error(),

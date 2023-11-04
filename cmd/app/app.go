@@ -9,6 +9,7 @@ import (
 
 	"github.com/ashtishad/fileverse/internal/domain"
 	"github.com/ashtishad/fileverse/internal/infra/database"
+	"github.com/ashtishad/fileverse/internal/infra/storage"
 	"github.com/ashtishad/fileverse/internal/service"
 	"github.com/ashtishad/fileverse/pkg/utils"
 	"github.com/gin-gonic/gin"
@@ -23,8 +24,11 @@ func Start() {
 
 	dbClient := database.GetDBClient(logger)
 
+	ipfsClient := storage.NewIPFSStorage("localhost:5001")
+
 	fileRepositoryDB := domain.NewFileRepoDB(dbClient, logger)
-	fileService := service.NewFileService(fileRepositoryDB, logger)
+
+	fileService := service.NewFileService(fileRepositoryDB, ipfsClient, logger)
 
 	router := gin.Default()
 
