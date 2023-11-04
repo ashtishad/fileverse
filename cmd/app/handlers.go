@@ -26,9 +26,10 @@ func (fh *FileHandlers) SaveFileHandler(c *gin.Context) {
 	defer file.Close()
 
 	fileName := header.Filename
+	fileSize := header.Size
 
 	// Pass the file along with its metadata to the service layer
-	fileResp, apiErr := fh.s.SaveFile(c.Request.Context(), fileName, file)
+	fileResp, apiErr := fh.s.SaveFile(c.Request.Context(), fileName, fileSize, file)
 	if apiErr != nil {
 		c.JSON(apiErr.Code(), gin.H{
 			"error": apiErr.Error(),

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"log/slog"
@@ -29,20 +28,13 @@ func NewFileService(repo domain.FileRepository, ipfs *storage.IPFSStorage, logge
 }
 
 // SaveFile handles the logic for saving a new file.
-func (s *DefaultFileService) SaveFile(ctx context.Context, fileName string, fileReader io.Reader) (*domain.FileRespDTO, utils.APIError) { //nolint:lll
-	// Buffer to store file content temporarily for size calculation
-	var fileBuffer bytes.Buffer
-	teeReader := io.TeeReader(fileReader, &fileBuffer)
-
+func (s *DefaultFileService) SaveFile(ctx context.Context, fileName string, fileSize int64, fileReader io.Reader) (*domain.FileRespDTO, utils.APIError) { //nolint:lll
 	// Upload to IPFS and get the hash
-	cid, err := s.ipfs.UploadFile(teeReader)
+	cid, err := s.ipfs.UploadFile(fileReader)
 	if err != nil {
 		s.logger.Error("failed to upload file to IPFS", err)
 		return nil, utils.InternalServerError("failed to upload file to IPFS", err)
 	}
-
-	// The size of the file is the size of the buffer after the read operation
-	fileSize := int64(fileBuffer.Len())
 
 	file := domain.File{
 		FileName: strings.TrimSpace(fileName),
