@@ -19,7 +19,7 @@ which I tried in this [PR](https://github.com/ashtishad/fileverse/pull/5)
 * IPFS Node: https://github.com/ipfs/kubo
 * IPFS client: https://github.com/ipfs/go-ipfs-api
 * Golangci-lint
-* Docker Compose v2
+* Docker Compose
 * Makefile
 
 
@@ -54,7 +54,7 @@ pkg/utils.go -> SanityCheck()
 * Run the application with `make run` command from project root. or, if you want to run it from IDE, please set
   environment variables by executing commands mentioned in Makefile on your terminal.
 
-<p align="right"><a href="#instabid-wallet">↑ Top</a></p>
+<p align="right"><a href="#fileverse">↑ Top</a></p>
 
 <!-- Project Structure -->
 
@@ -104,7 +104,7 @@ pkg/utils.go -> SanityCheck()
 
 ```
 
-<p align="right"><a href="#instabid-wallet">↑ Top</a></p>
+<p align="right"><a href="#fileverse">↑ Top</a></p>
 
 <!-- Data Flow (Hexagonal architecture) -->
 
@@ -114,9 +114,11 @@ pkg/utils.go -> SanityCheck()
 
     Outgoing : RepositoryDB --(Domain Object)-> Service --(DTO)-> REST Handlers --(JSON)-> Client
 
-<p align="right"><a href="#instabid-wallet">↑ Top</a></p>
+<p align="right"><a href="#fileverse">↑ Top</a></p>
 
-### Routes Planned
+### Routes
+
+[POSTMAN WORKSPACE](https://www.postman.com/altimetry-cosmonaut-1609324/workspace/fileverse)
 
 ## Upload
 
@@ -165,3 +167,4 @@ Example Response:
 }
 ```
 
+<p align="right"><a href="#fileverse">↑ Top</a></p>
