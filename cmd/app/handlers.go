@@ -18,14 +18,14 @@ func (fh *FileHandlers) SaveFileHandler(c *gin.Context) {
 		return
 	}
 
-	file, _, err := c.Request.FormFile("file")
+	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File retrieval error: " + err.Error()})
 		return
 	}
 	defer file.Close()
 
-	fileName := c.Request.FormValue("fileName")
+	fileName := header.Filename
 
 	// Pass the file along with its metadata to the service layer
 	fileResp, apiErr := fh.s.SaveFile(c.Request.Context(), fileName, file)
