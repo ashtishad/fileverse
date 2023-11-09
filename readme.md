@@ -8,19 +8,17 @@ API for uploading and retrieving large file in IPFS storage.
 Notes:
 * I find "streaming" mechanism is more efficient than concurrent upload/download by chunks,
 which I tried in this [PR](https://github.com/ashtishad/fileverse/pull/5)
-* Also, IPFS itself is designed to handle upload/download efficiently by making Chunking, Content Addressing,
-  Deduplication, Retrieval and Efficiency.
+* Also, IPFS itself is designed to handle upload/download efficiently by making Chunks, Content Addressing,
+  Deduplication, Retrieval.
 
 ### Tools
 
 * Golang
 * Gin
 * Postgresql(driver: pgx)
-* IPFS Node: https://github.com/ipfs/kubo
-* IPFS client: https://github.com/ipfs/go-ipfs-api
-* Golangci-lint
-* Docker Compose
-* Makefile
+* [IPFS Node](https://github.com/ipfs/kubo)
+* [IPFS client](https://pkg.go.dev/github.com/ipfs/go-ipfs-api)
+* [Golangci-lint](https://golangci-lint.run/)
 
 
 <!-- GETTING STARTED -->
